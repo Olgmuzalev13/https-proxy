@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	proxyAddress = "127.0.0.1:8089"
-	infoAddress  = "127.0.0.1:8000"
+	proxyAddress = "0.0.0.0:8080"
+	infoAddress  = "0.0.0.0:8000"
 	caCertPath   = "./certs/ca.crt"
 	caKeyPath    = "./certs/ca.key"
 	certsPath    = "./certs/ca_host.crt"

@@ -9,7 +9,7 @@ HEAD
 curl -x http://localhost:8080 --head http://guitaron.ru/
 
 301:
-curl -x http://localhost:8080 http://mail.ru
+curl -x http://127.0.0.1:8080 http://mail.ru
 
 404:
 curl -x http://localhost:8080 http://web.simmons.edu/~grovesd/comm244/notes/week2/1
