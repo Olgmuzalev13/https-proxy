@@ -49,7 +49,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-    //сервер для принятия запросов на прокси
+	//сервер для принятия запросов на прокси
 	ln, err := net.Listen("tcp", proxyAddress)
 	if err != nil {
 		log.Fatalf("Failed to listen on %s: %v", proxyAddress, err)
@@ -67,7 +67,7 @@ func main() {
 	}
 }
 
-//универсальная часть соединения считывающая и изменяющая запрос и передающая его нужному обработчику
+// универсальная часть соединения считывающая и изменяющая запрос и передающая его нужному обработчику
 func handleConnection(clientConn net.Conn) {
 	defer clientConn.Close()
 	buf := make([]byte, 8000)
