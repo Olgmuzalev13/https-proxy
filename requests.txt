@@ -17,7 +17,12 @@ OPTIONS
 curl -X http://localhost:8080 http://old-dos.ru/  OPTIONS
 
 
+HOST KEY GEN:
+openssl req -new -key cert.key -subj "/C=RU/ST=Moscow/L=Moscow/O=VK/OU=IT/CN=mail.ru" -sha256 | openssl x509 -req -days 3650 -CA ca.crt -CAkey ca.key -set_serial 10001
+
+
 HTTPS - (не работает)
 
-curl -x http://localhost:8080 https://mail.ru
+curl -k -x http://localhost:8080 https://mail.ru
 
+curl -c cookies.txt -k -L -X http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" --request POST -d "Login=$LOGIN" -d "Password=$PASSWORD"
