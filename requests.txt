@@ -21,7 +21,7 @@ HOST KEY GEN:
 openssl req -new -key cert.key -subj "/C=RU/ST=Moscow/L=Moscow/O=VK/OU=IT/CN=mail.ru" -sha256 | openssl x509 -req -days 3650 -CA ca.crt -CAkey ca.key -set_serial 10001
 
 
-HTTPS - (не работает)
+HTTPS - 
 
 curl -k -x http://localhost:8080 https://mail.ru
 
