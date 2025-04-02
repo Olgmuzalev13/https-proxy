@@ -6,7 +6,7 @@
 
 ## Запуск
 
-docker build . -t https-proxy
+docker build . -t https-proxy  
 docker run -d -p 8080:8080 -p 8000:8000 https-proxy
 
 Небольшой пример работоспособности  
