@@ -3,10 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -21,20 +23,60 @@ const (
 )
 
 type InMemoryDB struct {
-	RequestInDB  []Request
-	ResponseInDB []Request
+	RequestAndResponseInDB []RequestAndResponse
+}
+
+type RequestAndResponse struct {
+	Request  Request
+	Response Response
 }
 
 type Request struct {
 	Method    string
 	Path      string
-	GetParams string
-	Headers   string
-	Cookie    string
+	GetParams map[string]any
+	Headers   map[string]string
+	Cookie    map[string]any
 	Body      string
 }
 
-var db = InMemoryDB{}
+type Response struct {
+	Code    int
+	Message string
+	Headers map[string]string
+	Body    string
+}
+
+var db = InMemoryDB{
+	[]RequestAndResponse{{
+		Request: Request{
+			Method: "POST",
+			Path:   "/path1/path2",
+			GetParams: map[string]any{
+				"x": 123,
+				"y": "qwe",
+			},
+			Headers: map[string]string{
+				"Host":   "example.org",
+				"Header": "value",
+			},
+			Cookie: map[string]any{
+				"cookie1": 1,
+				"cookie2": "qwe",
+			},
+			Body: "<html>...",
+		},
+		Response: Response{
+			Code:    200,
+			Message: "OK",
+			Headers: map[string]string{
+				"Server": "nginx/1.14.1",
+				"Header": "value",
+			},
+			Body: "<html>...",
+		},
+	}},
+}
 
 func main() {
 	//сервер для раздачи произведенных запросов
@@ -200,50 +242,18 @@ func handleHTTPConnection(clientConn net.Conn, request []byte, lines []string, p
 	io.Copy(clientConn, realServerConn)
 }
 
-// handler для вывода списка произведенных запросов (еще не доделан - заготовка для 3 дз)
+// handler для вывода списка произведенных запросов
 func requestsList(w http.ResponseWriter, r *http.Request) {
-	log.Println("RequestsList started")
-	htmlContent := `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Requests List</title>
-			<meta charset="UTF-8">
-		</head>
-		<body>
-			<h1>Список запросов</h1>
-			<table border="1">
-				<tr>
-					<th>ID</th>
-					<th>Метод</th>
-					<th>Путь</th>
-					<th>Параметры</th>
-					<th>Заголовки</th>
-					<th>Cookie</th>
-					<th>Тело</th>
-				</tr>`
-	for i, req := range db.RequestInDB {
-		htmlContent += fmt.Sprintf(`
-			<tr>
-				<td><a href="/requests/%d">%d</a></td>
-				<td>%s</td>
-				<td>%s</td>
-				<td>%s</td>
-				<td>%s</td>
-				<td>%s</td>
-				<td>%s</td>
-			</tr>`, i, i, req.Method, req.Path, req.GetParams, req.Headers, req.Cookie, req.Body)
-	}
-	htmlContent += `
-			</table>
-		</body>
-		</html>`
+	log.Println("requestsList started")
 
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(htmlContent))
+	if err := list_tmpl.Execute(w, db.RequestAndResponseInDB); err != nil {
+		http.Error(w, "Render error", http.StatusInternalServerError)
+		log.Println("Execute error:", err)
+	}
 }
 
-// handler для вывода запроса (еще не доделан - заготовка для 3 дз)
+// handler для вывода запроса
 func requestByID(w http.ResponseWriter, r *http.Request) {
 	log.Println("requestByID started")
 	vars := mux.Vars(r)
@@ -251,42 +261,30 @@ func requestByID(w http.ResponseWriter, r *http.Request) {
 	index := -1
 
 	fmt.Sscanf(id, "%d", &index)
-	if index < 0 || index >= len(db.RequestInDB) {
+	if index < 0 || index >= len(db.RequestAndResponseInDB) {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
 		return
 	}
 
-	req := db.RequestInDB[index]
-	resp := db.ResponseInDB[index]
-
-	htmlContent := fmt.Sprintf(`
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Request Details</title>
-			<meta charset="UTF-8">
-		</head>
-		<body>
-			<h1>Запрос</h1>
-			<table border="1">
-				<tr><th>Метод</th><td>%s</td></tr>
-				<tr><th>Путь</th><td>%s</td></tr>
-				<tr><th>Параметры</th><td>%s</td></tr>
-				<tr><th>Заголовки</th><td>%s</td></tr>
-				<tr><th>Cookie</th><td>%s</td></tr>
-				<tr><th>Тело</th><td>%s</td></tr>
-			</table>
-			<h2>Ответ</h2>
-			<table border="1">
-				<tr><th>Статус</th><td>%s</td></tr>
-				<tr><th>Заголовки</th><td>%s</td></tr>
-				<tr><th>Тело</th><td>%s</td></tr>
-			</table>
-		</body>
-		</html>`,
-		req.Method, req.Path, req.GetParams, req.Headers, req.Cookie, req.Body,
-		resp.Method, resp.Headers, resp.Body)
+	pair := db.RequestAndResponseInDB[index]
 
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(htmlContent))
+	if err := tmpl.Execute(w, pair); err != nil {
+		http.Error(w, "Template execution error", http.StatusInternalServerError)
+	}
+}
+
+var tmpl *template.Template
+var list_tmpl *template.Template
+
+func init() {
+	var err error
+	tmpl, err = template.ParseFiles(filepath.Join("templates", "one_request.html"))
+	if err != nil {
+		log.Fatalf("Error parsing one_request: %v", err)
+	}
+	list_tmpl, err = template.ParseFiles(filepath.Join("templates", "requests_list.html"))
+	if err != nil {
+		log.Fatalf("Error parsing requests_list: %v", err)
+	}
 }

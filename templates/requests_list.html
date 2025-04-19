@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Request List</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 1em;
+            margin: 1em 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            margin-top: 0;
+        }
+        .section {
+            margin-bottom: 1em;
+        }
+        .map {
+            margin-left: 1em;
+        }
+        .details-btn {
+            display: inline-block;
+            padding: 0.5em 1em;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .details-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Список запросов</h1>
+    {{range $i, $item := .}}
+    <div class="card">
+        <h2>Запрос #{{$i}}</h2>
+        <div class="section"><strong>Метод:</strong> {{$item.Request.Method}}</div>
+        <div class="section"><strong>Путь:</strong> {{$item.Request.Path}}</div>
+        <div class="section"><strong>Параметры:</strong>
+            <ul class="map">
+                {{range $k, $v := $item.Request.GetParams}}<li><strong>{{$k}}:</strong> {{$v}}</li>{{end}}
+            </ul>
+        </div>
+        <div class="section"><strong>Заголовки:</strong>
+            <ul class="map">
+                {{range $k, $v := $item.Request.Headers}}<li><strong>{{$k}}:</strong> {{$v}}</li>{{end}}
+            </ul>
+        </div>
+        <div class="section"><strong>Cookie:</strong>
+            <ul class="map">
+                {{range $k, $v := $item.Request.Cookie}}<li><strong>{{$k}}:</strong> {{$v}}</li>{{end}}
+            </ul>
+        </div>
+        <div class="section"><strong>Тело:</strong> <pre>{{$item.Request.Body}}</pre></div>
+
+        <h3>Ответ</h3>
+        <div class="section"><strong>Код:</strong> {{$item.Response.Code}}</div>
+        <div class="section"><strong>Сообщение:</strong> {{$item.Response.Message}}</div>
+        <div class="section"><strong>Заголовки:</strong>
+            <ul class="map">
+                {{range $k, $v := $item.Response.Headers}}<li><strong>{{$k}}:</strong> {{$v}}</li>{{end}}
+            </ul>
+        </div>
+        <div class="section"><strong>Тело:</strong> <pre>{{$item.Response.Body}}</pre></div>
+
+        <a href="/requests/{{$i}}" class="details-btn">Подробнее</a>
+    </div>
+    {{end}}
+</body>
+</html>

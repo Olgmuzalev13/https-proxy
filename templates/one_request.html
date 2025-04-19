@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Request Details</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Запрос</h1>
+    <table>
+        <tr><th>Метод</th><td>{{.Request.Method}}</td></tr>
+        <tr><th>Путь</th><td>{{.Request.Path}}</td></tr>
+        <tr><th>Параметры</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Request.GetParams}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Request.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Cookie</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Request.Cookie}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.Request.Body}}</pre></td></tr>
+    </table>
+
+    <h2>Ответ</h2>
+    <table>
+        <tr><th>Код</th><td>{{.Response.Code}}</td></tr>
+        <tr><th>Сообщение</th><td>{{.Response.Message}}</td></tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Response.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.Response.Body}}</pre></td></tr>
+    </table>
+</body>
+</html>
