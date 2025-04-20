@@ -5,9 +5,11 @@ import (
 	"html/template"
 	"httpproxy/database"
 	"httpproxy/dto"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -44,18 +46,69 @@ func RequestByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handler для повторной отправки запроса
 func RepeatByID(w http.ResponseWriter, r *http.Request) {
 	log.Println("repeatByID started")
+
 	vars := mux.Vars(r)
 	id := vars["id"]
+
 	pair, err := get_request_from_DB_by_ID(id)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
+		return
+	}
+	original := pair.Request
+	targetURL := "http://" + original.Headers["Host"] + original.Path
+
+	req, err := http.NewRequest(original.Method, targetURL, strings.NewReader(original.Body))
+	if err != nil {
+		http.Error(w, "failed to build request", http.StatusInternalServerError)
+		return
 	}
 
+	// Установка заголовков (кроме Host)
+	for k, v := range original.Headers {
+		if k != "Host" {
+			req.Header.Set(k, v)
+		}
+	}
+	req.Host = original.Headers["Host"]
+	fmt.Println("!!!!!!!!!!!!!!", req.Host)
+	fmt.Println("@", original)
+
+	for name, val := range original.Cookie {
+		req.AddCookie(&http.Cookie{Name: name, Value: fmt.Sprint(val)})
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "failed to repeat request", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "failed to read response body", http.StatusInternalServerError)
+		return
+	}
+
+	repeatResp := dto.Response{
+		Code:    resp.StatusCode,
+		Message: resp.Status,
+		Headers: func() map[string]string {
+			m := make(map[string]string)
+			for k, v := range resp.Header {
+				m[k] = strings.Join(v, ", ")
+			}
+			return m
+		}(),
+		Body: string(bodyBytes),
+	}
+	newData := dto.Rerequested{Old: pair, NewResponse: repeatResp}
 	w.Header().Set("Content-Type", "text/html")
-	if err := repeat_request_tmpl.Execute(w, pair); err != nil {
+	if err := repeat_request_tmpl.Execute(w, newData); err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 	}
 }

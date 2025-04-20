@@ -108,7 +108,7 @@ func HandleHTTPConnection(clientConn net.Conn, requestBytes []byte, lines []stri
 
 	customReq := dto.Request{
 		Method: req.Method,
-		Path:   req.URL.Path,
+		Path:   host,
 		GetParams: func() map[string]any {
 			m := make(map[string]any)
 			for k, v := range req.URL.Query() {
@@ -118,6 +118,7 @@ func HandleHTTPConnection(clientConn net.Conn, requestBytes []byte, lines []stri
 		}(),
 		Headers: func() map[string]string {
 			m := make(map[string]string)
+			m["Host"] = host
 			for k, v := range req.Header {
 				m[k] = strings.Join(v, ", ")
 			}
@@ -263,7 +264,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 	// Сохраняем данные
 	requestStruct := dto.Request{
 		Method: req.Method,
-		Path:   req.URL.Path,
+		Path:   addr,
 		GetParams: func() map[string]any {
 			m := make(map[string]any)
 			for k, v := range req.URL.Query() {
@@ -316,176 +317,3 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 		Response: responseStruct,
 	})
 }
-
-// func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
-// 	log.Println("HTTPS connection:", connectRequest)
-
-// 	fields := strings.Split(connectRequest, " ")
-// 	if len(fields) < 2 {
-// 		log.Println("Malformed CONNECT request")
-// 		return
-// 	}
-// 	addr := fields[1]
-
-// 	// Подтверждаем клиенту установку соединения
-// 	_, err := clientConn.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
-// 	if err != nil {
-// 		log.Println("Failed to send 200 OK:", err)
-// 		return
-// 	}
-
-// 	// Настраиваем TLS на стороне клиента
-// 	tlsCert, err := tls.LoadX509KeyPair(caCertPath, caKeyPath)
-// 	if err != nil {
-// 		log.Println("Failed to load cert:", err)
-// 		return
-// 	}
-// 	tlsConfig := &tls.Config{
-// 		Certificates: []tls.Certificate{tlsCert},
-// 	}
-// 	tlsClientConn := tls.Server(clientConn, tlsConfig)
-// 	if err := tlsClientConn.Handshake(); err != nil {
-// 		log.Println("TLS handshake failed:", err)
-// 		return
-// 	}
-// 	defer tlsClientConn.Close()
-
-// 	// Устанавливаем TLS-соединение с реальным сервером
-// 	realServerConn, err := tls.Dial("tcp", addr, &tls.Config{
-// 		InsecureSkipVerify: true,
-// 	})
-// 	if err != nil {
-// 		log.Println("Failed to connect to real server:", err)
-// 		return
-// 	}
-// 	defer realServerConn.Close()
-
-// 	// Читаем и парсим HTTP-запрос от клиента
-// 	req, err := http.ReadRequest(bufio.NewReader(tlsClientConn))
-// 	if err != nil {
-// 		log.Println("Failed to read HTTPS request:", err)
-// 		return
-// 	}
-// 	reqBodyBytes, _ := io.ReadAll(req.Body)
-// 	req.Body.Close()
-
-// 	// Записываем запрос на сервер
-// 	req.Body = io.NopCloser(bytes.NewReader(reqBodyBytes))
-// 	if err := req.Write(realServerConn); err != nil {
-// 		log.Println("Failed to forward HTTPS request:", err)
-// 		return
-// 	}
-
-// 	// Читаем ответ от сервера
-// 	resp, err := http.ReadResponse(bufio.NewReader(realServerConn), req)
-// 	if err != nil {
-// 		log.Println("Failed to read HTTPS response:", err)
-// 		return
-// 	}
-// 	respBodyBytes, _ := io.ReadAll(resp.Body)
-// 	resp.Body.Close()
-
-// 	// Логируем или сохраняем
-// 	log.Println("=== HTTPS REQUEST ===")
-// 	log.Printf("%s %s\n", req.Method, req.URL.String())
-// 	log.Println(string(reqBodyBytes))
-
-// 	log.Println("=== HTTPS RESPONSE ===")
-// 	log.Println(resp.Status)
-// 	log.Println(string(respBodyBytes))
-
-// 	// Отправляем ответ клиенту
-// 	resp.Body = io.NopCloser(bytes.NewReader(respBodyBytes))
-// 	resp.Write(tlsClientConn)
-// }
-
-// // обрабатывает https соединение
-// func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
-// 	log.Println("HTTPS connection:", connectRequest)
-// 	fields := strings.Split(connectRequest, " ")
-// 	if len(fields) < 2 {
-// 		log.Println("Malformed CONNECT request")
-// 		return
-// 	}
-// 	addr := fields[1]
-// 	hostPort := strings.Split(addr, ":")
-// 	if len(hostPort) != 2 {
-// 		log.Println("Invalid host/port format")
-// 		return
-// 	}
-
-// 	_, err := clientConn.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
-// 	if err != nil {
-// 		log.Println("Failed to send 200 OK:", err)
-// 		return
-// 	}
-
-// 	tlsCert, err := tls.LoadX509KeyPair(caCertPath, caKeyPath)
-// 	if err != nil {
-// 		log.Println("Failed to load cert")
-// 		return
-// 	}
-
-// 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert}}
-// 	tlsClientConn := tls.Server(clientConn, tlsConfig)
-// 	if err := tlsClientConn.Handshake(); err != nil {
-// 		log.Println("TLS handshake failed:", err)
-// 		return
-// 	}
-// 	defer tlsClientConn.Close()
-
-// 	realServerConn, err := tls.Dial("tcp", addr, &tls.Config{})
-// 	if err != nil {
-// 		log.Println("Failed to connect to real server:", err)
-// 		return
-// 	}
-// 	defer realServerConn.Close()
-
-// 	go io.Copy(realServerConn, tlsClientConn)
-// 	io.Copy(tlsClientConn, realServerConn)
-// }
-
-// // обрабатывает http соединение
-// func HandleHTTPConnection(clientConn net.Conn, request []byte, lines []string, port string) {
-// 	log.Println("HTTP connection:", lines)
-// 	var host string
-// 	for _, line := range lines {
-// 		if strings.HasPrefix(line, "Host: ") {
-// 			host = strings.TrimSpace(strings.TrimPrefix(line, "Host: "))
-// 			break
-// 		}
-// 	}
-
-// 	if host == "" {
-// 		log.Println("Failed to parse Host header")
-// 		return
-// 	}
-
-// 	realServerConn, err := net.Dial("tcp", host+":"+port)
-// 	if err != nil {
-// 		log.Println("Failed to connect to real server:", err)
-// 		return
-// 	}
-// 	defer realServerConn.Close()
-
-// 	// отправляем запрос
-// 	_, err = realServerConn.Write(request)
-// 	if err != nil {
-// 		log.Println("Failed to forward request to server:", err)
-// 		return
-// 	}
-
-// 	// читаем ответ от сервера
-// 	var responseBuf bytes.Buffer
-// 	multiWriter := io.MultiWriter(clientConn, &responseBuf)
-
-// 	// перехват ответа и параллельно отправляем клиенту
-// 	go io.Copy(realServerConn, clientConn) // обратный канал
-// 	io.Copy(multiWriter, realServerConn)   // записывает и клиенту, и в буфер
-
-// 	// выводим запрос и ответ
-// 	log.Println("=== REQUEST ===")
-// 	log.Println(string(request))
-// 	log.Println("=== RESPONSE ===")
-// 	log.Println(responseBuf.String())
-// }

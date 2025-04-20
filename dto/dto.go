@@ -28,3 +28,8 @@ type Response struct {
 	Headers map[string]string
 	Body    string
 }
+
+type Rerequested struct {
+	Old  RequestAndResponse
+	NewResponse Response
+}

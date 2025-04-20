@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Детали запроса</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f8f9fa;
+        }
+        h1, h2 {
+            color: #343a40;
+        }
+        .button-bar {
+            margin-bottom: 2em;
+        }
+        .details-btn {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 0.6em 1.2em;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .details-btn:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2em;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            width: 20%;
+            background-color: #f1f3f5;
+            font-weight: bold;
+        }
+        ul {
+            margin: 0;
+            padding-left: 1.2em;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f1f3f5;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .response-old {
+            border-left: 6px solid #ffc107;
+        }
+        .response-new {
+            border-left: 6px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>Запрос</h1>
+    <div class="button-bar">
+        <a href="/scan/{{.Old.Request.ID}}" class="details-btn">Просканировать</a>
+        <a href="/repeat/{{.Old.Request.ID}}" class="details-btn">Повторно отправить</a>
+        <a href="/requests" class="details-btn">Назад к списку</a>
+    </div>
+
+    <table>
+        <tr><th>Метод</th><td>{{.Old.Request.Method}}</td></tr>
+        <tr><th>Путь</th><td>{{.Old.Request.Path}}</td></tr>
+        <tr><th>Параметры</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Old.Request.GetParams}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Old.Request.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Cookie</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Old.Request.Cookie}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.Old.Request.Body}}</pre></td></tr>
+    </table>
+
+    <h2>Исходный ответ</h2>
+    <table class="response-old">
+        <tr><th>Код</th><td>{{.Old.Response.Code}}</td></tr>
+        <tr><th>Сообщение</th><td>{{.Old.Response.Message}}</td></tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Old.Response.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.Old.Response.Body}}</pre></td></tr>
+    </table>
+
+    <h2>Повторный ответ</h2>
+    <table class="response-new">
+        <tr><th>Код</th><td>{{.NewResponse.Code}}</td></tr>
+        <tr><th>Сообщение</th><td>{{.NewResponse.Message}}</td></tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .NewResponse.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.NewResponse.Body}}</pre></td></tr>
+    </table>
+</body>
+</html>
