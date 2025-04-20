@@ -83,6 +83,8 @@ func main() {
 	info_server := mux.NewRouter()
 	info_server.HandleFunc("/requests", requestsList).Methods("GET")
 	info_server.HandleFunc("/requests/{id}", requestByID).Methods("GET")
+	info_server.HandleFunc("/repeat/{id}", repeatByID).Methods("GET")
+	info_server.HandleFunc("/scan/{id}", scanByID).Methods("GET")
 
 	go func() {
 		log.Printf("Info server listening on %s", infoAddress)
@@ -258,33 +260,72 @@ func requestByID(w http.ResponseWriter, r *http.Request) {
 	log.Println("requestByID started")
 	vars := mux.Vars(r)
 	id := vars["id"]
-	index := -1
-
-	fmt.Sscanf(id, "%d", &index)
-	if index < 0 || index >= len(db.RequestAndResponseInDB) {
+	err, pair := get_request_from_DB_by_ID(id)
+	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
-		return
 	}
 
-	pair := db.RequestAndResponseInDB[index]
-
 	w.Header().Set("Content-Type", "text/html")
-	if err := tmpl.Execute(w, pair); err != nil {
+	if err := one_request_tmpl.Execute(w, pair); err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 	}
 }
 
-var tmpl *template.Template
-var list_tmpl *template.Template
+// handler для повторной отправки запроса
+func repeatByID(w http.ResponseWriter, r *http.Request) {
+	log.Println("repeatByID started")
+	vars := mux.Vars(r)
+	id := vars["id"]
+	err, pair := get_request_from_DB_by_ID(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusNotFound)
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	if err := repeat_request_tmpl.Execute(w, pair); err != nil {
+		http.Error(w, "Template execution error", http.StatusInternalServerError)
+	}
+}
+
+// handler для проверки уязвимости запросов на SQL injection – во всех GET/POST/Сookie/HTTP заголовках
+func scanByID(w http.ResponseWriter, r *http.Request) {
+	log.Println("scanByID started")
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	err, pair := get_request_from_DB_by_ID(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusNotFound)
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	if err := scan_tmpl.Execute(w, pair); err != nil {
+		http.Error(w, "Template execution error", http.StatusInternalServerError)
+	}
+}
+
+func get_request_from_DB_by_ID(id string) (error, RequestAndResponse) {
+	index := -1
+	fmt.Sscanf(id, "%d", &index)
+	if index < 0 || index >= len(db.RequestAndResponseInDB) {
+		return fmt.Errorf("there is no such id in DB"), RequestAndResponse{}
+	}
+	return nil, db.RequestAndResponseInDB[index]
+}
+
+var one_request_tmpl, list_tmpl, repeat_request_tmpl, scan_tmpl *template.Template
+
+func mustParseTemplate(name string) *template.Template {
+	t, err := template.ParseFiles(filepath.Join("templates", name))
+	if err != nil {
+		log.Fatalf("Error parsing %s: %v", name, err)
+	}
+	return t
+}
 
 func init() {
-	var err error
-	tmpl, err = template.ParseFiles(filepath.Join("templates", "one_request.html"))
-	if err != nil {
-		log.Fatalf("Error parsing one_request: %v", err)
-	}
-	list_tmpl, err = template.ParseFiles(filepath.Join("templates", "requests_list.html"))
-	if err != nil {
-		log.Fatalf("Error parsing requests_list: %v", err)
-	}
+	one_request_tmpl = mustParseTemplate("one_request.html")
+	list_tmpl = mustParseTemplate("requests_list.html")
+	repeat_request_tmpl = mustParseTemplate("repeat_request.html")
+	scan_tmpl = mustParseTemplate("scan.html")
 }
