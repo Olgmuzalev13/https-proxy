@@ -1,10 +1,15 @@
 FROM golang:1.23
 
-ADD go.mod .
+WORKDIR /app
+
+COPY go.mod . 
+COPY go.sum .
+RUN go mod download
 
 COPY . .
 
-RUN go build -o https-proxy main.go
+RUN go build -o https-proxy
+
 CMD ["./https-proxy"]
 
 EXPOSE 8080 8000

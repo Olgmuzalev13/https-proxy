@@ -1,0 +1,28 @@
+package dto
+
+type InMemoryDB struct {
+	RequestAndResponseInDB []RequestAndResponse
+}
+
+type RequestAndResponse struct {
+	Request  Request
+	Response Response
+}
+
+type Request struct {
+	ID        int
+	Method    string
+	Path      string
+	GetParams map[string]any
+	Headers   map[string]string
+	Cookie    map[string]any
+	Body      string
+}
+
+type Response struct {
+	ID        int
+	Code    int
+	Message string
+	Headers map[string]string
+	Body    string
+}
