@@ -1,6 +1,7 @@
 package main
 
 import (
+	"httpproxy/database"
 	"httpproxy/handlers"
 	"log"
 	"net"
@@ -16,6 +17,7 @@ const (
 
 func main() {
 	//сервер для раздачи произведенных запросов
+	database.InitDB()
 	info_server := mux.NewRouter()
 	info_server.HandleFunc("/requests", handlers.RequestsList).Methods("GET")
 	info_server.HandleFunc("/requests/{id}", handlers.RequestByID).Methods("GET")

@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"html/template"
+	"httpproxy/database"
 	"httpproxy/dto"
 	"log"
 	"net/http"
@@ -16,7 +17,12 @@ func RequestsList(w http.ResponseWriter, r *http.Request) {
 	log.Println("requestsList started")
 
 	w.Header().Set("Content-Type", "text/html")
-	if err := list_tmpl.Execute(w, db.RequestAndResponseInDB); err != nil {
+	all_requests, err := database.GetAllRequests()
+	if err != nil {
+		http.Error(w, "DB error", http.StatusInternalServerError)
+		log.Println("Execute error:", err)
+	}
+	if err := list_tmpl.Execute(w, all_requests); err != nil {
 		http.Error(w, "Render error", http.StatusInternalServerError)
 		log.Println("Execute error:", err)
 	}
@@ -27,7 +33,7 @@ func RequestByID(w http.ResponseWriter, r *http.Request) {
 	log.Println("requestByID started")
 	vars := mux.Vars(r)
 	id := vars["id"]
-	err, pair := get_request_from_DB_by_ID(id)
+	pair, err := get_request_from_DB_by_ID(id)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
 	}
@@ -43,7 +49,7 @@ func RepeatByID(w http.ResponseWriter, r *http.Request) {
 	log.Println("repeatByID started")
 	vars := mux.Vars(r)
 	id := vars["id"]
-	err, pair := get_request_from_DB_by_ID(id)
+	pair, err := get_request_from_DB_by_ID(id)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
 	}
@@ -60,7 +66,7 @@ func ScanByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	err, pair := get_request_from_DB_by_ID(id)
+	pair, err := get_request_from_DB_by_ID(id)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
 	}
@@ -88,42 +94,40 @@ func init() {
 	scan_tmpl = mustParseTemplate("scan.html")
 }
 
-func get_request_from_DB_by_ID(id string) (error, dto.RequestAndResponse) {
+func get_request_from_DB_by_ID(id string) (dto.RequestAndResponse, error) {
 	index := -1
 	fmt.Sscanf(id, "%d", &index)
-	if index < 0 || index >= len(db.RequestAndResponseInDB) {
-		return fmt.Errorf("there is no such id in DB"), dto.RequestAndResponse{}
-	}
-	return nil, db.RequestAndResponseInDB[index]
+	pair, err := database.GetRequestResponseByID(index)
+	return pair, err
 }
 
-var db = dto.InMemoryDB{
-	[]dto.RequestAndResponse{{
-		Request: dto.Request{
-			Method: "POST",
-			Path:   "/path1/path2",
-			GetParams: map[string]any{
-				"x": 123,
-				"y": "qwe",
-			},
-			Headers: map[string]string{
-				"Host":   "example.org",
-				"Header": "value",
-			},
-			Cookie: map[string]any{
-				"cookie1": 1,
-				"cookie2": "qwe",
-			},
-			Body: "<html>...",
-		},
-		Response: dto.Response{
-			Code:    200,
-			Message: "OK",
-			Headers: map[string]string{
-				"Server": "nginx/1.14.1",
-				"Header": "value",
-			},
-			Body: "<html>...",
-		},
-	}},
-}
+// var db = dto.InMemoryDB{
+// 	[]dto.RequestAndResponse{{
+// 		Request: dto.Request{
+// 			Method: "POST",
+// 			Path:   "/path1/path2",
+// 			GetParams: map[string]any{
+// 				"x": 123,
+// 				"y": "qwe",
+// 			},
+// 			Headers: map[string]string{
+// 				"Host":   "example.org",
+// 				"Header": "value",
+// 			},
+// 			Cookie: map[string]any{
+// 				"cookie1": 1,
+// 				"cookie2": "qwe",
+// 			},
+// 			Body: "<html>...",
+// 		},
+// 		Response: dto.Response{
+// 			Code:    200,
+// 			Message: "OK",
+// 			Headers: map[string]string{
+// 				"Server": "nginx/1.14.1",
+// 				"Header": "value",
+// 			},
+// 			Body: "<html>...",
+// 		},
+// 	}},
+// }

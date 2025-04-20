@@ -17,6 +17,8 @@ type Request struct {
 	Headers   map[string]string
 	Cookie    map[string]any
 	Body      string
+	Secure int
+	FastRerequests string
 }
 
 type Response struct {
