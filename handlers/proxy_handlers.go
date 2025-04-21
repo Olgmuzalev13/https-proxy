@@ -226,7 +226,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 		return
 	}
 	defer tlsClientConn.Close()
-
+	log.Println("request addr", addr)
 	realServerConn, err := tls.Dial("tcp", addr, &tls.Config{InsecureSkipVerify: true})
 	if err != nil {
 		log.Println("Failed to connect to real server:", err)
@@ -242,6 +242,8 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 	}
 	reqBody, _ := io.ReadAll(req.Body)
 	req.Body.Close()
+	log.Println("sending request - ", req)
+	log.Println("--- ", req.Host)
 
 	// Отправляем запрос
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
@@ -249,7 +251,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 		log.Println("Failed to forward HTTPS request:", err)
 		return
 	}
-
+	log.Println("=== 1 ===")
 	// Читаем ответ
 	resp, err := http.ReadResponse(bufio.NewReader(realServerConn), req)
 	if err != nil {
@@ -258,7 +260,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 	}
 	respBody, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
-
+	log.Println("=== 2 ===")
 	// Отправляем клиенту
 	resp.Body = io.NopCloser(bytes.NewReader(respBody))
 	resp.Write(tlsClientConn)
@@ -266,7 +268,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 	// Сохраняем данные
 	requestStruct := dto.Request{
 		Method: req.Method,
-		Path:   addr,
+		Path: req.Host + req.URL.RequestURI(),
 		GetParams: func() map[string]any {
 			m := make(map[string]any)
 			for k, v := range req.URL.Query() {
@@ -313,7 +315,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 	log.Println("=== REQUEST ===")
 	log.Printf("%+v\n", requestStruct)
 	log.Println("=== RESPONSE ===")
-	//log.Printf("%+v\n", responseStruct)
+	log.Printf("%+v %+v %+v\n", responseStruct.Code, responseStruct.Message, responseStruct.Headers)
 	database.SaveRequestResponse(dto.RequestAndResponse{
 		Request:  requestStruct,
 		Response: responseStruct,

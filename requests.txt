@@ -25,4 +25,8 @@ HTTPS -
 
 curl -k -x http://localhost:8080 https://mail.ru
 
+curl -k -x http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" -H "Content-Type: application/x-www-form-urlencoded" -d "Login=ВАШ_ЛОГИН" -d "Password=ВАШ_ПАРОЛЬ" -c cookies.txt
+
+
+curl -k -x http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" --request POST -d "Login=$LOGIN" -d "Password=$PASSWORD"
 curl -c cookies.txt -k -L -X http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" --request POST -d "Login=$LOGIN" -d "Password=$PASSWORD"
