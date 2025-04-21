@@ -33,3 +33,9 @@ type Rerequested struct {
 	Old  RequestAndResponse
 	NewResponse Response
 }
+
+type Scanned struct {
+	Info  RequestAndResponse
+	SecurityInfo string
+	Safe bool
+}

@@ -118,9 +118,11 @@ func HandleHTTPConnection(clientConn net.Conn, requestBytes []byte, lines []stri
 		}(),
 		Headers: func() map[string]string {
 			m := make(map[string]string)
-			m["Host"] = host
+			//m["Host"] = host
 			for k, v := range req.Header {
-				m[k] = strings.Join(v, ", ")
+				if k != "Proxy-Connection"{
+					m[k] = strings.Join(v, ", ")
+				}
 			}
 			return m
 		}(),

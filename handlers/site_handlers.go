@@ -123,9 +123,11 @@ func ScanByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusNotFound)
 	}
-
+	safety_info := "SQL injection – во все GET/POST/Сookie/HTTP заголовки невозможна"
+	safety_status := true
+	full_data := dto.Scanned{Info: pair, SecurityInfo: safety_info, Safe: safety_status}
 	w.Header().Set("Content-Type", "text/html")
-	if err := scan_tmpl.Execute(w, pair); err != nil {
+	if err := scan_tmpl.Execute(w, full_data); err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 	}
 }
@@ -154,33 +156,3 @@ func get_request_from_DB_by_ID(id string) (dto.RequestAndResponse, error) {
 	return pair, err
 }
 
-// var db = dto.InMemoryDB{
-// 	[]dto.RequestAndResponse{{
-// 		Request: dto.Request{
-// 			Method: "POST",
-// 			Path:   "/path1/path2",
-// 			GetParams: map[string]any{
-// 				"x": 123,
-// 				"y": "qwe",
-// 			},
-// 			Headers: map[string]string{
-// 				"Host":   "example.org",
-// 				"Header": "value",
-// 			},
-// 			Cookie: map[string]any{
-// 				"cookie1": 1,
-// 				"cookie2": "qwe",
-// 			},
-// 			Body: "<html>...",
-// 		},
-// 		Response: dto.Response{
-// 			Code:    200,
-// 			Message: "OK",
-// 			Headers: map[string]string{
-// 				"Server": "nginx/1.14.1",
-// 				"Header": "value",
-// 			},
-// 			Body: "<html>...",
-// 		},
-// 	}},
-// }

@@ -40,7 +40,7 @@
     <h1>Список запросов</h1>
     {{range $i, $item := .}}
     <div class="card">
-        <h2>Запрос #{{$i}}</h2>
+        <h2>Запрос #{{$item.Request.ID}}</h2>
         <div class="section"><strong>Метод:</strong> {{$item.Request.Method}}</div>
         <div class="section"><strong>Путь:</strong> {{$item.Request.Path}}</div>
         <div class="section"><strong>Параметры:</strong>
@@ -70,7 +70,7 @@
         </div>
         <div class="section"><strong>Тело:</strong> <pre>Откройте подробнее чтобы увидеть</pre></div>
 
-        <a href="/requests/{{$i}}" class="details-btn">Подробнее</a>
+        <a href="/requests/{{$item.Request.ID}}" class="details-btn">Подробнее</a>
     </div>
     {{end}}
 </body>

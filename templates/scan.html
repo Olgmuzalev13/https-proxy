@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Детали запроса</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+        }
+        .safe-bg {
+            background-color: #d4edda; /* светло-зелёный */
+        }
+        .unsafe-bg {
+            background-color: #f8d7da; /* светло-красный */
+        }
+        h1, h2 {
+            color: #343a40;
+        }
+        .button-bar {
+            margin-bottom: 2em;
+        }
+        .details-btn {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 0.6em 1.2em;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .details-btn:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2em;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            width: 20%;
+            background-color: #f1f3f5;
+            font-weight: bold;
+        }
+        ul {
+            margin: 0;
+            padding-left: 1.2em;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f1f3f5;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .security-banner {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 1em;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5em;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="{{if .Safe}}safe-bg{{else}}unsafe-bg{{end}}">
+    <h1>Запрос</h1>
+    <h2 class="security-banner">{{.SecurityInfo}}</h2>
+
+    <div class="button-bar">
+        <a href="/scan/{{.Info.Request.ID}}" class="details-btn">Просканировать</a>
+        <a href="/repeat/{{.Info.Request.ID}}" class="details-btn">Повторно отправить</a>
+        <a href="/requests" class="details-btn">Назад к списку</a>
+    </div>
+
+    <table>
+        <tr><th>Метод</th><td>{{.Info.Request.Method}}</td></tr>
+        <tr><th>Путь</th><td>{{.Info.Request.Path}}</td></tr>
+        <tr><th>Параметры</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Info.Request.GetParams}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Info.Request.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Cookie</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Info.Request.Cookie}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.Info.Request.Body}}</pre></td></tr>
+    </table>
+
+    <h2>Ответ</h2>
+    <table>
+        <tr><th>Код</th><td>{{.Info.Response.Code}}</td></tr>
+        <tr><th>Сообщение</th><td>{{.Info.Response.Message}}</td></tr>
+        <tr><th>Заголовки</th>
+            <td>
+                <ul>
+                {{range $key, $val := .Info.Response.Headers}}
+                    <li><strong>{{$key}}:</strong> {{$val}}</li>
+                {{end}}
+                </ul>
+            </td>
+        </tr>
+        <tr><th>Тело</th><td><pre>{{.Info.Response.Body}}</pre></td></tr>
+    </table>
+</body>
+</html>
