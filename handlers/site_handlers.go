@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"bufio"
-	"crypto/tls"
 	"fmt"
 	"html/template"
 	"httpproxy/database"
@@ -91,7 +89,7 @@ func HTTPrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
 	}
 	//if len(original.GetParams) > 0 && !strings.Contains(original.Path, "?") {
 	if len(original.GetParams) > 0 {
-		if strings.Contains(original.Path, "?"){
+		if strings.Contains(original.Path, "?") {
 			u.Path = original.Path[:strings.Index(original.Path, "?")]
 		}
 		query := url.Values{}
@@ -163,6 +161,7 @@ func HTTPrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
 	log.Println("response - ", repeatResp)
 	return repeatResp, nil
 }
+
 // func HTTPrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
 // 	log.Println("HTTPrerequest started")
 // 	original := cloneRequest(pair.Request)
@@ -204,87 +203,74 @@ func HTTPrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
 // 		return dto.Response{}, fmt.Errorf("failed to read response body: %v", err)
 // 	}
 
-// 	repeatResp := dto.Response{
-// 		Code:    resp.StatusCode,
-// 		Message: resp.Status,
-// 		Headers: func() map[string]string {
-// 			m := make(map[string]string)
-// 			for k, v := range resp.Header {
-// 				m[k] = strings.Join(v, ", ")
-// 			}
-// 			return m
-// 		}(),
-// 		Body: string(bodyBytes),
-// 	}
-// 	return repeatResp, nil
-// }
-
+//		repeatResp := dto.Response{
+//			Code:    resp.StatusCode,
+//			Message: resp.Status,
+//			Headers: func() map[string]string {
+//				m := make(map[string]string)
+//				for k, v := range resp.Header {
+//					m[k] = strings.Join(v, ", ")
+//				}
+//				return m
+//			}(),
+//			Body: string(bodyBytes),
+//		}
+//		return repeatResp, nil
+//	}
 func HTTPSrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
 	log.Println("HTTPSrerequest started")
 	saved := cloneRequest(pair.Request)
 	log.Println("saved", saved, saved.Path)
 
-	parts := strings.SplitN(saved.Path, "/", 2)
-	if len(parts) != 2 {
-		return dto.Response{}, fmt.Errorf("invalid saved.Path format: %s", saved.Path)
-	}
-	host := parts[0]
-	path := "/" + parts[1]
-	address := host + ":443"
+	host := saved.Headers["Host"]
+	path := saved.Path
 
-	// Подготовим тело
-	bodyReader := io.NopCloser(strings.NewReader(saved.Body))
+	// Формируем полный URL для запроса
+	address := "https://" + host + path
 
-	// Правильная сборка запроса
-	req := &http.Request{
-		Method:     saved.Method,
-		URL:        &url.URL{Path: path},
-		Host:       host,
-		Header:     make(http.Header),
-		Body:       bodyReader,
-		RequestURI: path,
-		Proto:      "HTTP/1.1",
-		ProtoMajor: 1,
-		ProtoMinor: 1,
+	// Создаём запрос
+	req, err := http.NewRequest(saved.Method, address, strings.NewReader(saved.Body))
+	if err != nil {
+		return dto.Response{}, fmt.Errorf("failed to build request: %v", err)
 	}
 
+	// Устанавливаем заголовки
 	for k, v := range saved.Headers {
-		req.Header.Set(k, v)
-	}
-
-	if len(saved.Cookie) > 0 {
-		var cookies []string
-		for k, v := range saved.Cookie {
-			cookies = append(cookies, fmt.Sprintf("%s=%v", k, v))
+		if k != "Host" {
+			req.Header.Set(k, v)
 		}
-		req.Header.Set("Cookie", strings.Join(cookies, "; "))
+	}
+	req.Host = host
+
+	// Добавляем куки
+	for name, val := range saved.Cookie {
+		req.AddCookie(&http.Cookie{
+			Name:  name,
+			Value: fmt.Sprint(val),
+		})
 	}
 
-	log.Println("resending request - ", req)
 
-	// TLS-соединение
-	conn, err := tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
+	log.Println("rerequesting - ", req)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
-		return dto.Response{}, fmt.Errorf("tls dial error: %v", err)
-	}
-	defer conn.Close()
-
-	if err := req.Write(conn); err != nil {
-		return dto.Response{}, fmt.Errorf("failed to write request: %v", err)
-	}
-
-	resp, err := http.ReadResponse(bufio.NewReader(conn), req)
-	if err != nil {
-		return dto.Response{}, fmt.Errorf("failed to read response: %v", err)
+		return dto.Response{}, fmt.Errorf("failed to repeat request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return dto.Response{}, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	responseStruct := dto.Response{
+	repeatResp := dto.Response{
 		Code:    resp.StatusCode,
 		Message: resp.Status,
 		Headers: func() map[string]string {
@@ -294,11 +280,93 @@ func HTTPSrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
 			}
 			return m
 		}(),
-		Body: string(respBody),
+		Body: string(bodyBytes),
 	}
 
-	return responseStruct, nil
+	log.Println("response - ", repeatResp)
+	return repeatResp, nil
 }
+
+// func HTTPSrerequest(pair dto.RequestAndResponse) (dto.Response, error) {
+// 	log.Println("HTTPSrerequest started")
+// 	saved := cloneRequest(pair.Request)
+// 	log.Println("saved", saved, saved.Path)
+
+// 	parts := strings.SplitN(saved.Path, "/", 2)
+// 	if len(parts) != 2 {
+// 		return dto.Response{}, fmt.Errorf("invalid saved.Path format: %s", saved.Path)
+// 	}
+// 	host := parts[0]
+// 	path := "/" + parts[1]
+// 	address := host + ":443"
+
+// 	// Подготовим тело
+// 	bodyReader := io.NopCloser(strings.NewReader(saved.Body))
+
+// 	// Правильная сборка запроса
+// 	req := &http.Request{
+// 		Method:     saved.Method,
+// 		URL:        &url.URL{Path: path},
+// 		Host:       host,
+// 		Header:     make(http.Header),
+// 		Body:       bodyReader,
+// 		RequestURI: path,
+// 		Proto:      "HTTP/1.1",
+// 		ProtoMajor: 1,
+// 		ProtoMinor: 1,
+// 	}
+
+// 	for k, v := range saved.Headers {
+// 		req.Header.Set(k, v)
+// 	}
+
+// 	if len(saved.Cookie) > 0 {
+// 		var cookies []string
+// 		for k, v := range saved.Cookie {
+// 			cookies = append(cookies, fmt.Sprintf("%s=%v", k, v))
+// 		}
+// 		req.Header.Set("Cookie", strings.Join(cookies, "; "))
+// 	}
+
+// 	log.Println("resending request - ", req)
+
+// 	// TLS-соединение
+// 	conn, err := tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
+// 	if err != nil {
+// 		return dto.Response{}, fmt.Errorf("tls dial error: %v", err)
+// 	}
+// 	defer conn.Close()
+
+// 	if err := req.Write(conn); err != nil {
+// 		return dto.Response{}, fmt.Errorf("failed to write request: %v", err)
+// 	}
+
+// 	resp, err := http.ReadResponse(bufio.NewReader(conn), req)
+// 	if err != nil {
+// 		return dto.Response{}, fmt.Errorf("failed to read response: %v", err)
+// 	}
+// 	defer resp.Body.Close()
+
+// 	respBody, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return dto.Response{}, fmt.Errorf("failed to read response body: %v", err)
+// 	}
+
+// 	responseStruct := dto.Response{
+// 		Code:    resp.StatusCode,
+// 		Message: resp.Status,
+// 		Headers: func() map[string]string {
+// 			m := make(map[string]string)
+// 			for k, v := range resp.Header {
+// 				m[k] = strings.Join(v, ", ")
+// 			}
+// 			return m
+// 		}(),
+// 		Body: string(respBody),
+// 	}
+
+// 	return responseStruct, nil
+// }
 
 // handler для проверки уязвимости запросов на SQL injection – во всех GET/POST/Сookie/HTTP заголовках
 func ScanByID(w http.ResponseWriter, r *http.Request) {
@@ -312,7 +380,12 @@ func ScanByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("request to check - ", pair.Request)
-	originalResp, err := HTTPrerequest(pair)
+	var originalResp dto.Response
+	if pair.Request.Secure == 0 {
+		originalResp, err = HTTPrerequest(pair)
+	} else {
+		originalResp, err = HTTPSrerequest(pair)
+	}
 	if err != nil {
 		return
 	}
@@ -328,7 +401,12 @@ func ScanByID(w http.ResponseWriter, r *http.Request) {
 
 	check := func(paramType, key, originalValue, payload string, mutate func(string) dto.Request) {
 		modified := mutate(payload)
-		resp, err := HTTPrerequest(dto.RequestAndResponse{Request: modified})
+		var resp dto.Response
+		if pair.Request.Secure == 0 {
+			resp, err = HTTPrerequest(dto.RequestAndResponse{Request: modified})
+		} else {
+			resp, err = HTTPSrerequest(dto.RequestAndResponse{Request: modified})
+		}
 		if err != nil {
 			return
 		}
@@ -436,6 +514,7 @@ func cloneRequest(req dto.Request) dto.Request {
 		Body:      req.Body,
 	}
 }
+
 // func ScanByID(w http.ResponseWriter, r *http.Request) {
 // 	log.Println("scanByID started")
 // 	vars := mux.Vars(r)
