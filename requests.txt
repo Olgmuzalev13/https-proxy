@@ -27,6 +27,10 @@ curl -k -x http://localhost:8080 https://mail.ru
 
 curl -k -x http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" -H "Content-Type: application/x-www-form-urlencoded" -d "Login=ВАШ_ЛОГИН" -d "Password=ВАШ_ПАРОЛЬ" -c cookies.txt
 
+curl -x http://localhost:8080 "http://guitaron.ru/search/^" -H ^"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7^" -H ^"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7^" -H ^"Cache-Control: no-cache^" -H ^"Connection: keep-alive^" -H ^"Content-Type: application/x-www-form-urlencoded^" -b ^"phpbb3_2m4zb_u=1; phpbb3_2m4zb_k=; _ym_uid=174351187230979734; _ym_d=1743511872; phpbb3_2m4zb_sid=4f40e01cf172db0ace63b27376231292; _ym_isad=2; PHPSESSID=a8bdae8358e932ddbbdacf4a19318f2e^" -H ^"Origin: http://guitaron.ru^" -H ^"Pragma: no-cache^" -H ^"Referer: http://guitaron.ru/search.php^" -H ^"Upgrade-Insecure-Requests: 1^" -H ^"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36^" --data-raw ^"query=how+to+use+grok+from+russia^" --insecure
 
-curl -k -x http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" --request POST -d "Login=$LOGIN" -d "Password=$PASSWORD"
-curl -c cookies.txt -k -L -X http://localhost:8080 "https://auth.mail.ru/cgi-bin/auth" --request POST -d "Login=$LOGIN" -d "Password=$PASSWORD"
+
+Небезопасный запрос
+curl -x http://localhost:8080 "http://testphp.vulnweb.com/artists.php?artist=1'"
+
+curl -x http://localhost:8080 "http://testphp.vulnweb.com/artists.php?artist=1"

@@ -1,5 +1,7 @@
 package dto
 
+import "html/template"
+
 type InMemoryDB struct {
 	RequestAndResponseInDB []RequestAndResponse
 }
@@ -10,19 +12,19 @@ type RequestAndResponse struct {
 }
 
 type Request struct {
-	ID        int
-	Method    string
-	Path      string
-	GetParams map[string]any
-	Headers   map[string]string
-	Cookie    map[string]any
-	Body      string
-	Secure int
+	ID             int
+	Method         string
+	Path           string
+	GetParams      map[string]any
+	Headers        map[string]string
+	Cookie         map[string]any
+	Body           string
+	Secure         int
 	FastRerequests string
 }
 
 type Response struct {
-	ID        int
+	ID      int
 	Code    int
 	Message string
 	Headers map[string]string
@@ -30,12 +32,20 @@ type Response struct {
 }
 
 type Rerequested struct {
-	Old  RequestAndResponse
+	Old         RequestAndResponse
 	NewResponse Response
 }
 
 type Scanned struct {
-	Info  RequestAndResponse
-	SecurityInfo string
-	Safe bool
+	Info           RequestAndResponse
+	SecurityInfo   string
+	Safe           bool
+	InjectionsList []InjectionInfo
+}
+
+type InjectionInfo struct {
+	Safe          bool
+	Code          int
+	ContentLength int
+	Injections    template.HTML
 }

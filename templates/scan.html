@@ -73,12 +73,44 @@
             font-size: 1.2em;
             font-weight: bold;
         }
+        .injection-row-unsafe {
+            background-color: #fff3cd; /* жёлтый фон для небезопасных */
+        }
     </style>
 </head>
 <body class="{{if .Safe}}safe-bg{{else}}unsafe-bg{{end}}">
     <h1>Запрос</h1>
-    <h2 class="security-banner">{{.SecurityInfo}}</h2>
-
+    <h2 class="security-banner" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>{{.SecurityInfo}}</span>
+        <button onclick="toggleInjections()" class="details-btn" style="margin: 0;">Инъекции</button>
+    </h2>
+    <table id="injection-list" style="display: none; margin-bottom: 2em;">
+        <thead>
+            <tr>
+                <th>Инъекция</th>
+                <th>Код</th>
+                <th>Длина</th>
+                <th>Безопасно</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .InjectionsList}}
+            <tr class="{{if not .Safe}}injection-row-unsafe{{end}}">
+                <td>{{.Injections}}</td>
+                <td>{{.Code}}</td>
+                <td>{{.ContentLength}}</td>
+                <td>{{if .Safe}}✅{{else}}⚠️{{end}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    
+    <script>
+        function toggleInjections() {
+            const list = document.getElementById("injection-list");
+            list.style.display = (list.style.display === "none") ? "block" : "none";
+        }
+    </script>
     <div class="button-bar">
         <a href="/scan/{{.Info.Request.ID}}" class="details-btn">Просканировать</a>
         <a href="/repeat/{{.Info.Request.ID}}" class="details-btn">Повторно отправить</a>

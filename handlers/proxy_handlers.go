@@ -108,7 +108,7 @@ func HandleHTTPConnection(clientConn net.Conn, requestBytes []byte, lines []stri
 
 	customReq := dto.Request{
 		Method: req.Method,
-		Path:   host,
+		Path:   req.Host + req.URL.RequestURI(),
 		GetParams: func() map[string]any {
 			m := make(map[string]any)
 			for k, v := range req.URL.Query() {
@@ -120,7 +120,7 @@ func HandleHTTPConnection(clientConn net.Conn, requestBytes []byte, lines []stri
 			m := make(map[string]string)
 			//m["Host"] = host
 			for k, v := range req.Header {
-				if k != "Proxy-Connection"{
+				if k != "Proxy-Connection" {
 					m[k] = strings.Join(v, ", ")
 				}
 			}
@@ -268,7 +268,7 @@ func HandleHTTPSConnection(clientConn net.Conn, connectRequest string) {
 	// Сохраняем данные
 	requestStruct := dto.Request{
 		Method: req.Method,
-		Path: req.Host + req.URL.RequestURI(),
+		Path:   req.Host + req.URL.RequestURI(),
 		GetParams: func() map[string]any {
 			m := make(map[string]any)
 			for k, v := range req.URL.Query() {
